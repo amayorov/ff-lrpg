@@ -37,6 +37,7 @@ namespace eval object {
     }
 
     proc load {objname what} {
+# load -- это загрузить в инвентарь и ячейки. Для фунциклирования необходимо подключить оборудование специальной командой
 	global objects
 	set inv [dict get $objects($objname) inventory]
 	set whatname [dict get $what name]
@@ -78,7 +79,7 @@ namespace eval engine {
 # sid -- имя объекта, на котором стоит двигатель. В принципе, можно считать бутылку шампанского кораблём, обладающим двигателем... Планета -- это, в общем-то тоже космический корабль, только здоровый и без двигателей (хотя...)
 # +дополнительные параметры...
 # angle -- угол в радианах, на который двигатель отличается от носа корабля... Можно сделать корабль (читай, ракету) в виде летающего скраерского значка, причём траектория полёта этой хрени будет вполне в скавенском духе (йопнутая на всю голову)
-    namespace export burn consumption usage force create state
+    namespace export burn consumption usage force state install connect
     namespace ensemble create
 
     proc state {engine} {
@@ -112,15 +113,14 @@ namespace eval engine {
 	    puts stderr "Engine not installed!"
 	    return
 	}
-	set sdata $objects($sid)
 	set tank [dict get $engine tank]
-	if {$tank == {} || [dict get $sdata inventory $tank type] != "tank"} {
+	if {$tank == {} || [dict get $objects($sid) inventory $tank type] != "tank"} {
 # То, к чему подключён двигателем, баком не является...
 	    puts stderr "No tank connected!"
 	    return
 	}
-	set mass [object mass $sdata]
-	set leftfuel [dict get $sdata inventory $tank left]
+	set mass [object mass $objects($sid)]
+	set leftfuel [dict get $objects($sid) inventory $tank left]
 	set reqfuel [expr 1.0*[engine consumption $engine]*$dt]
 	if {$leftfuel < $reqfuel} {
 	    set fraction [expr 1.0*$leftfuel/$reqfuel]
@@ -128,26 +128,47 @@ namespace eval engine {
 	    set fraction 1.0
 	}
 # Убираем топливо...
-	dict set sdata inventory $tank left [expr $leftfuel-$fraction*$reqfuel]
+	dict set objects($sid) inventory $tank left [expr $leftfuel-$fraction*$reqfuel]
 # Добавляем приращение скорости...
 	set force [expr [engine force $engine]*$fraction]
-	set current_speed [dict get $sdata speed]
+	set current_speed [dict get $objects($sid) speed]
 	
-	set angle [expr [dict get $sdata angle]+[dict get $engine angle]]
+	set angle [expr [dict get $objects($sid) angle]+[dict get $engine angle]]
 	set new_speed {}
 	foreach c $current_speed op {cos sin} {
 	    lappend new_speed [expr [concat "$c+$force/$mass*$op" "($angle)"]]
 	}
 
-	dict set sdata speed $new_speed
+	dict set objects($sid) speed $new_speed
 
-	set objects($sid) $sdata
 
 	puts "left: $leftfuel, force $force"
     }
 
-    proc create {name} {
-	return [dict create name $name type "engine" throttle 0. sid {} tank {} angle -3.14159]
+    proc install {engine ship {angle 0}} {
+	global objects
+	set inv [dict get $objects($ship) inventory]
+	set enginename [dict get $engine name]
+	if {![dict exists $inv $enginename]} {
+	    # Подключаем незагруженный двигатель
+	    puts stderr "Installing non-loaded engine!!!"
+	    return
+	} 
+	dict set objects($ship) inventory $enginename throttle 0.
+	dict set objects($ship) inventory $enginename sid $ship
+	dict set objects($ship) inventory $enginename angle $angle
+	dict set objects($ship) inventory $enginename tank {}
+    }
+
+    proc connect {engine tank} {
+	global objects
+	set sid [dict get $engine sid]
+	if {$sid == {} } {
+	    puts stderr "Trying to install unconnected engine!"
+	    return
+	}
+	set enginename [dict get $engine name]
+	dict set objects($sid) inventory $enginename tank $tank
     }
 }
 
