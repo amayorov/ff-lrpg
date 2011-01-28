@@ -94,7 +94,7 @@ namespace eval object {
 
 namespace eval ship {
 # команда  ship позволяет делать дополнительные операции над объектом, если он является кораблём
-    namespace export tanks engines throttle
+    namespace export tanks engines throttle engine turn
     namespace ensemble create
 # callsign -- позывной -- перенести в рубку
 # controls -- словарь, содержащий состояние "рычагов управления" корабля -- перенести в рубку
@@ -127,9 +127,13 @@ namespace eval ship {
 	}
     }
 
-}
+    proc turn {ship angle} {
+	global objects
+	set current [dict get $objects($ship) angle]
+	dict set objects($ship) angle [expr $current+$angle]
+    }
 
-namespace eval engine {
+    namespace eval engine {
 
 # Члены словаря engine:
 # throttle -- состояние "ручки газа", 0..1
@@ -137,99 +141,109 @@ namespace eval engine {
 # sid -- имя объекта, на котором стоит двигатель. В принципе, можно считать бутылку шампанского кораблём, обладающим двигателем... Планета -- это, в общем-то тоже космический корабль, только здоровый и без двигателей (хотя...)
 # +дополнительные параметры...
 # angle -- угол в радианах, на который двигатель отличается от носа корабля... Можно сделать корабль (читай, ракету) в виде летающего скраерского значка, причём траектория полёта этой хрени будет вполне в скавенском духе (йопнутая на всю голову)
-    namespace export burn consumption usage force state install connect
-    namespace ensemble create
+	namespace export burn consumption usage force state install connect
+	namespace ensemble create
 
-    proc state {engine} {
+	proc state {engine} {
 # возвращает состояние двигателя
-	return 1.
-    }
+	    return 1.
+	}
 
-    proc force {engine} {
+	proc force {engine} {
 # возвращает тягу двигателя
-	set throttle [dict get $engine throttle]
-	set state [engine state $engine]
-	return [expr 1.*$throttle]
-    }
-
-    proc consumption {engine} {
-	#Процедура возвращает потребление топлива двигателем в зависимости от состояния ручки газа и т.п.
-	if {$engine == {} } {
-	    # Внезапно, двигатель не найден
-	} else {
 	    set throttle [dict get $engine throttle]
-	    set state [engine state $engine]
-	    return [expr 1.0*$throttle]
+	    return [expr 1.*$throttle]
 	}
-    }
 
-    proc burn {engine dt} {
-	global objects
-	set sid [dict get $engine sid]
-	if {$sid == {} } {
+	proc consumption {engine} {
+	    #Процедура возвращает потребление топлива двигателем в зависимости от состояния ручки газа и т.п.
+	    if {$engine == {} } {
+		# Внезапно, двигатель не найден
+	    } else {
+		set throttle [dict get $engine throttle]
+		set state [state $engine]
+		return [expr 1.0*$throttle]
+	    }
+	}
+
+	proc burn {engine dt} {
+	    if {[interp issafe {}]} {
+		# смертный решил воспользоваться... Обломись =)
+		# надо бы перенести отсюда
+		return
+	    }
+	    global objects
+	    set sid [dict get $engine sid]
+	    if {$sid == {} } {
 # Двигатель не установлен на корабль
-	    puts stderr "Engine not installed!"
-	    return
-	}
-	set tank [dict get $engine tank]
-	if {![is [object inv get $sid $tank] tank]} {
+		puts stderr "Engine not installed!"
+		return
+	    }
+	    set tank [dict get $engine tank]
+	    if {![is [object inv get $sid $tank] tank]} {
 # То, к чему подключён двигателем, баком не является...
-	    puts stderr "No tank connected!"
-	    return
-	}
-	set mass [object mass $objects($sid)]
-	set leftfuel [dict get $objects($sid) inventory $tank left]
-	set reqfuel [expr 1.0*[engine consumption $engine]*$dt]
-	if {$leftfuel < $reqfuel} {
-	    set fraction [expr 1.0*$leftfuel/$reqfuel]
-	} else {
-	    set fraction 1.0
-	}
+		puts stderr "No tank connected!"
+		return
+	    }
+	    set mass [object mass $objects($sid)]
+	    set leftfuel [dict get $objects($sid) inventory $tank left]
+	    set reqfuel [expr 1.0*[consumption $engine]*$dt]
+	    if {$leftfuel < $reqfuel} {
+		set fraction [expr 1.0*$leftfuel/$reqfuel]
+	    } else {
+		set fraction 1.0
+	    }
 # Убираем топливо...
-	dict set objects($sid) inventory $tank left [expr $leftfuel-$fraction*$reqfuel]
+	    dict set objects($sid) inventory $tank left [expr $leftfuel-$fraction*$reqfuel]
 # Добавляем приращение скорости...
-	set force [expr [engine force $engine]*$fraction]
-	set current_speed [dict get $objects($sid) speed]
-	
-	set angle [expr [dict get $objects($sid) angle]+[dict get $engine angle]]
-	set new_speed {}
-	foreach c $current_speed op {cos sin} {
-	    lappend new_speed [expr [concat "$c+$force/$mass*$op" "($angle)"]]
+	    set force [expr [force $engine]*$fraction]
+	    set current_speed [dict get $objects($sid) speed]
+	    
+	    set angle [expr [dict get $objects($sid) angle]+[dict get $engine angle]]
+	    set new_speed {}
+	    foreach c $current_speed op {cos sin} {
+		lappend new_speed [expr [concat "$c+$force/$mass*$op" "($angle)"]]
+	    }
+
+	    dict set objects($sid) speed $new_speed
+
+
+	    puts "left: $leftfuel, force $force"
 	}
 
-	dict set objects($sid) speed $new_speed
-
-
-	puts "left: $leftfuel, force $force"
-    }
-
-    proc install {engine ship {angle 0}} {
-	global objects
-	set inv [dict get $objects($ship) inventory]
-	set enginename [dict get $engine name]
-	if {![dict exists $inv $enginename]} {
-	    # Подключаем незагруженный двигатель
-	    puts stderr "Installing non-loaded engine!!!"
-	    return
-	} 
-	dict set objects($ship) inventory $enginename throttle 0.
-	dict set objects($ship) inventory $enginename sid $ship
-	dict set objects($ship) inventory $enginename angle $angle
-	dict set objects($ship) inventory $enginename tank {}
-    }
-
-    proc connect {engine tank} {
-	global objects
-	set sid [dict get $engine sid]
-	if {$sid == {} } {
-	    puts stderr "Trying to install unconnected engine!"
-	    return
+	proc install {engine ship {angle 0}} {
+# странная процедура, надо бы придумать, что с ней делать
+# для простого смертного -- слишком большая власть
+	    if {[interp issafe {}]} {
+		# смертный решил этой властью воспользоваться...
+		return
+	    }
+	    global objects
+	    set inv [dict get $objects($ship) inventory]
+	    set enginename [dict get $engine name]
+	    if {![dict exists $inv $enginename]} {
+		# Подключаем незагруженный двигатель
+		puts stderr "Installing non-loaded engine!!!"
+		return
+	    } 
+	    dict set objects($ship) inventory $enginename throttle 0.
+	    dict set objects($ship) inventory $enginename sid $ship
+	    dict set objects($ship) inventory $enginename angle $angle
+	    dict set objects($ship) inventory $enginename tank {}
 	}
-	set enginename [dict get $engine name]
-	dict set objects($sid) inventory $enginename tank $tank
+
+	proc connect {engine tank} {
+	    global objects
+	    set sid [dict get $engine sid]
+	    if {$sid == {} } {
+		puts stderr "Trying to install unconnected engine!"
+		return
+	    }
+	    set enginename [dict get $engine name]
+	    dict set objects($sid) inventory $enginename tank $tank
+	}
     }
 }
-
 proc tick {obj dt} {
     global objects
     set damping 0.5
@@ -237,7 +251,7 @@ proc tick {obj dt} {
     if {[object type $obj]=="ship"} {
 	foreach enginename [ship engines $objects($obj)] {
 	    set eng [dict get $objects($obj) inventory $enginename]
-	    engine burn $eng $dt
+	    ship engine burn $eng $dt
 	}
     }
 
