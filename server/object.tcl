@@ -2,12 +2,23 @@ package require Tcl 8.5
 
 variable objects
 
+proc is {object type} {
+    set objtype [dict get $object type]
+    if {[lsearch -exact $objtype $type] > -1} {
+	return yes
+    } else {
+	return no
+    }
+}
+
 namespace eval object {
-    namespace export mass create type load
+    namespace export inventory mass create type 
     namespace ensemble create
 # Члены словаря "объекты"
 #
 # type -- тип объекта. Планета, мусор, корабль, бутылка виски в свободном полёте...
+# Главное -- что в свободном полёте. То, что летать само по себе не способно,
+# считается не объектом, а балластом^Wгрузом
 # 
 # position -- список из координат
 # speed -- список из скоростей
@@ -31,25 +42,59 @@ namespace eval object {
 	global objects
 	return [dict get $objects($objname) type]
     }
+
     
     proc mass {objname} {
 	return 1
     }
 
-    proc load {objname what} {
+    namespace eval inventory { ;# Сокращение от inventory, ибо долго писать и много придётся использовать
+	namespace export load list get set
+	namespace ensemble create
+
+	proc load {objname what} {
 # load -- это загрузить в инвентарь и ячейки. Для фунциклирования необходимо подключить оборудование специальной командой
-	global objects
-	set inv [dict get $objects($objname) inventory]
-	set whatname [dict get $what name]
-	dict append inv $whatname $what
-	dict set objects($objname) inventory $inv
+	    global objects
+	    ::set inv [dict get $objects($objname) inventory]
+	    ::set whatname [dict get $what name]
+	    dict append inv $whatname $what
+	    dict set objects($objname) inventory $inv
+	}
+
+	proc list {objname} {
+	    # возвращает список предметов в инвентаре
+	    global objects
+	    ::set invlist [dict keys [dict get $objects($objname) inventory]]
+	    return $invlist
+	}
+	
+	proc exists {objname invname} {
+	    global objects
+	    return [dict exists $objects($objname) inventory $invname]
+	}
+	proc get {objname invname} {
+	    global objects
+	    if [exists $objname $invname] {
+		return [dict get $objects($objname) inventory $invname]
+	    } else {
+		return
+	    }
+	}
+	proc set {objname invname args} {
+	    global objects
+	    if {[exists $objname $invname]} {
+		foreach {key val} $args {
+		    dict set objects($objname) inventory $invname $key $val
+		}
+	    }
+	}
     }
 
 }
 
 namespace eval ship {
 # команда  ship позволяет делать дополнительные операции над объектом, если он является кораблём
-    namespace export tanks engines
+    namespace export tanks engines throttle
     namespace ensemble create
 # callsign -- позывной -- перенести в рубку
 # controls -- словарь, содержащий состояние "рычагов управления" корабля -- перенести в рубку
@@ -57,18 +102,31 @@ namespace eval ship {
 	set inv [dict get $s inventory]
 	set result {}
 	dict for {key val} $inv {
-	    if {[dict get $val type]=="engine"} {
+	    if {[is $val engine]} {
+		lappend result $key
+	    }
+	}
+	return $result
+    }
+    proc tanks {s} {
+	set inv [dict get $s inventory]
+	set result {}
+	dict for {key val} $inv {
+	    if {[is $val tank]} {
 		lappend result $key
 	    }
 	}
 	return $result
     }
 
-    proc prep_engine {engine tank} {
+    proc throttle {ship engine value} {
+	if {$value < 0} { set value 0} 
+	if {$value > 1} { set value 1} 
+	if {[is [object inv get $ship $engine] engine]} {
+	    object inv set $ship $engine throttle $value
+	}
     }
-}
 
-namespace eval item {
 }
 
 namespace eval engine {
@@ -114,7 +172,7 @@ namespace eval engine {
 	    return
 	}
 	set tank [dict get $engine tank]
-	if {$tank == {} || [dict get $objects($sid) inventory $tank type] != "tank"} {
+	if {![is [object inv get $sid $tank] tank]} {
 # То, к чему подключён двигателем, баком не является...
 	    puts stderr "No tank connected!"
 	    return

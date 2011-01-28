@@ -3,21 +3,23 @@ source object.tcl
 object create ship "Waa" {0 0} {0 0}
 
 set e [dict create name "Blah" type engine]
-set t [dict create name "Can" type tank left 1.]
+set t [dict create name "Can" type tank left 10.]
 
-object load Waa $e
-object load Waa $t
+object inv load Waa $e
+object inv load Waa $t
 
-engine install [dict get $objects(Waa) inventory Blah] Waa
-engine connect [dict get $objects(Waa) inventory Blah] Can
+engine install [object inv get Waa Blah] Waa
+engine connect [object inv get Waa Blah] Can
 
-dict set objects(Waa) inventory Blah throttle 0.1
+#object inv set Waa Blah throttle 0.1
+ship throttle Waa Blah 0.1
 
-puts [dict keys [dict get $objects(Waa) inventory]]
+puts [object inv list Waa]
 
 while yes {
     foreach obj [array names objects] {
-	puts [dict get $objects($obj) speed]
+	puts "Speed [dict get $objects($obj) speed]"
+	puts "Coords [dict get $objects($obj) position]"
 	tick $obj 1
     }
     puts {}
