@@ -15,7 +15,7 @@ namespace eval user {
     proc allow {cmd {alias {}} args} {
 	variable allowed
 	if {$alias != {} } {
-	    lappend allowed [list $cmd $alias $args]
+	    lappend allowed [list $alias $cmd $args]
 	} else {
 	    lappend allowed [list $cmd $cmd $args]
 	}
@@ -48,7 +48,7 @@ namespace eval user {
 	}
 	catch {interp eval $ship $cmd} result
 	interp delete $ship
-	return result
+	return $result
     }
 }
 
