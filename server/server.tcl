@@ -11,6 +11,11 @@ namespace eval test {
 }
 
 user allow ::test::echo shipname {$ship}
+user allow ::ship::engines {} {$ship}
+user allow ::ship::tanks {} {$ship}
+user allow ::ship::throttle ::throttle {$ship}
+user allow ::ship::turn ::turn {$ship}
+user allow ::object::inventory::list ::inv {$ship}
 
 
 namespace eval server {
@@ -44,4 +49,16 @@ namespace eval server {
 
 }
 
-vwait forever
+source test.tcl
+
+while yes {
+    foreach obj [array names objects] {
+	puts "Speed [dict get $objects($obj) speed]"
+	puts "Coords [dict get $objects($obj) position]"
+	tick $obj 1
+    }
+    puts {}
+    after 1000 {set t 0}
+    vwait t
+}
+#vwait forever
