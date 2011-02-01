@@ -137,6 +137,7 @@ namespace eval ship {
 
     proc steer {ship angle} {
 	turn $ship [expr 3.14159*$angle/180]
+	return $angle
     }
 
     namespace eval engine {
