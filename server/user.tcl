@@ -1,4 +1,6 @@
 package require Tcl 8.5
+package require ff-object
+package provide ff-user 0.0
 
 # Файл содержит одну-единственную команду user
 # Через неё делается всё...
@@ -31,6 +33,7 @@ namespace eval user {
 
     proc run {ship cmd} {
 	variable allowed
+	global objects
 	interp create -safe $ship
 	# выключить потом, нечего гадить в stdout
 	interp share {} stdout $ship

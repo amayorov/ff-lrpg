@@ -1,5 +1,8 @@
-source object.tcl
-source user.tcl
+lappend ::auto_path .
+
+package require ff-object
+package require ff-user
+package require ff-navi
 
 namespace eval test {
     proc a {} {
@@ -11,11 +14,18 @@ namespace eval test {
 }
 
 user allow ::test::echo shipname {$ship}
-user allow ::ship::engines {} {$ship}
-user allow ::ship::tanks {} {$ship}
+# Следующие строчки работают не по имени корабля, а по значению
+user allow ::ship::engines {} {$objects($ship)}
+user allow ::ship::tanks {} {$objects($ship)}
+
+
 user allow ::ship::throttle ::throttle {$ship}
-user allow ::ship::turn ::turn {$ship}
+user allow ::ship::steer ::steer {$ship}
 user allow ::object::inventory::list ::inv {$ship}
+
+user allow ::navi::position {} {$ship}
+user allow ::navi::velocity {} {$ship}
+user allow ::navi::angle {} {$ship}
 
 
 namespace eval server {
@@ -57,8 +67,7 @@ source test.tcl
 
 while yes {
     foreach obj [array names objects] {
-	puts "Speed [dict get $objects($obj) speed]"
-	puts "Coords [dict get $objects($obj) position]"
+	puts "$obj: Pos {[dict get $objects($obj) position]} Sp {[dict get $objects($obj) speed]}"
 	tick $obj 1
     }
     puts {}

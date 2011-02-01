@@ -1,4 +1,5 @@
 package require Tcl 8.5
+package provide ff-object 0.0
 
 variable objects
 
@@ -97,7 +98,6 @@ namespace eval ship {
     namespace export tanks engines throttle engine turn
     namespace ensemble create
 # callsign -- позывной -- перенести в рубку
-# controls -- словарь, содержащий состояние "рычагов управления" корабля -- перенести в рубку
     proc engines {s} {
 	set inv [dict get $s inventory]
 	set result {}
@@ -125,12 +125,18 @@ namespace eval ship {
 	if {[is [object inv get $ship $engine] engine]} {
 	    object inv set $ship $engine throttle $value
 	}
+	return [list $engine $value]
     }
 
     proc turn {ship angle} {
 	global objects
 	set current [dict get $objects($ship) angle]
 	dict set objects($ship) angle [expr $current+$angle]
+	return $angle
+    }
+
+    proc steer {ship angle} {
+	turn $ship [expr 3.14159*$angle/180]
     }
 
     namespace eval engine {
