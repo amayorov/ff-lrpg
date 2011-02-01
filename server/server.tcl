@@ -28,7 +28,12 @@ namespace eval server {
 
     proc chat {sd} {
 	variable connections
-	set packet [gets $sd]
+	if {[eof $sd] || [catch {gets $sd packet}]} {
+	    close $sd
+	    puts "Connection with $connections($sd) closed"
+	    unset connections($sd)
+	    return
+	}
 	if {[llength $packet]!= 2} {return}
 	set id [lindex $packet 0]
 	set dat [lindex $packet 1]
@@ -42,7 +47,6 @@ namespace eval server {
 	    set result [user run $ship $dat]
 	    puts $sd [list $id $result]
 	}
-	
     }
 
     socket -server ::server::listen 9999
@@ -61,4 +65,3 @@ while yes {
     after 1000 {set t 0}
     vwait t
 }
-#vwait forever
