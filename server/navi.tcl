@@ -21,22 +21,10 @@ namespace eval navi {
 	set s [dict get $objects($shipname) speed]
 	set x [lindex $s 0]
 	set y [lindex $s 1]
-	set abs_speed [expr sqrt($x**2+$y**2)]
-	if { $x != 0 } {
-	    set angle [expr atan([lindex $s 1]/[lindex $s 0])]
-	    if {$x < 0} {
-		set angle [expr 3.14159+$angle]
-	    }
-	} elseif {y>0} {
-	    set angle [expr 3.14159/2]
-	} else {
-	    set angle [expr 3*3.14159/2]
-	}
+	set abs_speed [expr hypot($y,$x)]
+	set angle [expr atan2($y,$x)]
 	if {$angle < 0} {
-	    set angle [expr $angle+3.14159]
-	}
-	if {$angle > 2*3.14159} {
-	    set angle [expr $angle-2*3.14159]
+	    set angle [expr $angle+2*3.14159]
 	}
 	#return [list $abs_speed $angle]
 	return [format "%.3f %.1f" $abs_speed [expr $angle/3.14159*180]]
