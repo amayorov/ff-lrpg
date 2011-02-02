@@ -64,6 +64,25 @@ namespace eval server {
 
 }
 
+proc draw_ship {widget name} {
+    set offset(x) 50
+    set offset(y) 50
+    set scale 10
+    set sinfo $::objects($name)
+    set a [dict get $sinfo angle]
+    set pos [dict get $sinfo position]
+    set points { -3 -2 5 0 -3 2 -2 0}
+    set rotated_points {}
+    foreach {x y} $points {
+	lappend rotated_points [expr $x*cos($a)-$y*sin($a)+[lindex  $pos 0]*$scale+$offset(x)]m [expr $x*sin($a)+$y*cos($a)+[lindex $pos 1]*$scale+$offset(y)]m
+    }
+    if {[$widget gettags $name] != {}} {
+	$widget coords $name $rotated_points
+    } else {
+	$widget create polygon $rotated_points -tags $name -fill black -activefill red
+    }
+}
+
 source test.tcl
 set dt 100
 set t 0
@@ -77,7 +96,8 @@ pack .c
 grid .f.name .f.value
 pack .f
 .c create oval 1 1 100m 100m -outline black
-.c create oval 0 0 1 1 -tags Destiny -fill black -activefill red
+.c create line 50m 0 50m 100m -fill grey
+.c create line 0 50m 100m 50m -fill grey
 set selected {}
 
 set log [open "log.txt" "w" ]
@@ -87,9 +107,7 @@ while yes {
 
 	puts $log [concat [dict get $objects($obj) position] [dict get $objects($obj) speed]]
 	flush $log
-	set x [lindex [dict get $objects($obj) position] 0]
-	set y [lindex [dict get $objects($obj) position] 1]
-	.c coords $obj [expr $x*$scale+50-1]m [expr $y*$scale+50-1]m [expr $x*$scale+50+1]m [expr $y*$scale+50+1]m 
+	draw_ship .c $obj
 	tick $obj [expr 1.0*$dt/1000]
     }
     set s [lindex [.c gettags current] 0]
