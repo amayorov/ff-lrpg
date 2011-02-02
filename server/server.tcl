@@ -3,6 +3,7 @@ lappend ::auto_path .
 package require ff-object
 package require ff-user
 package require ff-navi
+package require Tk 8.5
 
 namespace eval test {
     proc a {} {
@@ -64,13 +65,27 @@ namespace eval server {
 }
 
 source test.tcl
+set dt 100
+set t 0
 
+canvas .c -width 100m -height 100m
+pack .c
+.c create oval 0 0 100m 100m -outline black
+set scale 10
+
+set log [open "log.txt" "w" ]
 while yes {
     foreach obj [array names objects] {
-	puts "$obj: Pos {[dict get $objects($obj) position]} Sp {[dict get $objects($obj) speed]}"
-	tick $obj 1
+#	puts "$obj: Pos {[dict get $objects($obj) position]} Sp {[dict get $objects($obj) speed]}"
+
+	puts $log [concat [dict get $objects($obj) position] [dict get $objects($obj) speed]]
+	flush $log
+	.c delete $obj
+	set x [lindex [dict get $objects($obj) position] 0]
+	set y [lindex [dict get $objects($obj) position] 1]
+	.c create oval [expr $x*$scale+50-1]m [expr $y*$scale+50-1]m [expr $x*$scale+50+1]m [expr $y*$scale+50+1]m -tags $obj -fill black
+	tick $obj [expr 1.0*$dt/1000]
     }
-    puts {}
-    after 1000 {set t 0}
+    after $dt {set t [expr 1.0*$t+$dt]}
     vwait t
 }

@@ -213,9 +213,6 @@ namespace eval ship {
 	    }
 
 	    dict set objects($sid) speed $new_speed
-
-
-	    puts "left: $leftfuel, force $force"
 	}
 
 	proc install {engine ship {angle 0}} {
