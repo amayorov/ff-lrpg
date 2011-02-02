@@ -67,11 +67,18 @@ namespace eval server {
 source test.tcl
 set dt 100
 set t 0
+set scale 10
 
 canvas .c -width 100m -height 100m
+frame .f 
+label .f.name 
+label .f.value
 pack .c
-.c create oval 0 0 100m 100m -outline black
-set scale 10
+grid .f.name .f.value
+pack .f
+.c create oval 1 1 100m 100m -outline black
+.c create oval 0 0 1 1 -tags Destiny -fill black -activefill red
+set selected {}
 
 set log [open "log.txt" "w" ]
 while yes {
@@ -80,11 +87,18 @@ while yes {
 
 	puts $log [concat [dict get $objects($obj) position] [dict get $objects($obj) speed]]
 	flush $log
-	.c delete $obj
 	set x [lindex [dict get $objects($obj) position] 0]
 	set y [lindex [dict get $objects($obj) position] 1]
-	.c create oval [expr $x*$scale+50-1]m [expr $y*$scale+50-1]m [expr $x*$scale+50+1]m [expr $y*$scale+50+1]m -tags $obj -fill black
+	.c coords $obj [expr $x*$scale+50-1]m [expr $y*$scale+50-1]m [expr $x*$scale+50+1]m [expr $y*$scale+50+1]m 
 	tick $obj [expr 1.0*$dt/1000]
+    }
+    set s [lindex [.c gettags current] 0]
+    if {$s != {} } {
+	set selected $s
+	.f.name configure -text $selected
+    }
+    if {$selected != {} } {
+	.f.value configure -text [format "%.3f %.3f" {*}[dict get $objects($obj) position]]
     }
     after $dt {set t [expr 1.0*$t+$dt]}
     vwait t
