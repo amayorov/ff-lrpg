@@ -110,13 +110,16 @@ while yes {
 	draw_ship .c $obj
 	tick $obj [expr 1.0*$dt/1000]
     }
-    set s [lindex [.c gettags current] 0]
-    if {$s != {} } {
-	set selected $s
-	.f.name configure -text $selected
+    
+    foreach sh [.c gettags current] {
+	if {$sh != "current"} {
+	    set selected $sh
+	    .f.name configure -text $selected
+	}
+	break
     }
     if {$selected != {} } {
-	.f.value configure -text [format "%.3f %.3f" {*}[dict get $objects($obj) position]]
+	.f.value configure -text [format "%.3f %.3f" {*}[dict get $objects($selected) position]]
     }
     after $dt {set t [expr 1.0*$t+$dt]}
     vwait t
