@@ -53,6 +53,18 @@ namespace eval user {
 	interp delete $ship
 	return $result
     }
+
+    proc unknown {cmd args} {
+	set cmdlist [info commands $cmd*]
+	if {[llength $cmdlist] == 1} {
+	    set cmd $cmdlist
+	    return [uplevel 1 [list $cmd {*}$args]]
+	} elseif {[llength $cmdlist] == 0} {
+	    return "invalid command name \"$cmd\""
+	} else {
+	    return [concat "unknown or ambiguous command \"$cmd\": must be" [join [lrange $cmdlist 0 end-1] {, }] "or" [lindex $cmdlist end]]
+	}
+    }
 }
 
 # Пример использовния:

@@ -28,6 +28,8 @@ user allow ::navi::position {} {$ship}
 user allow ::navi::velocity {} {$ship}
 user allow ::navi::angle {} {$ship}
 
+user allow ::user::unknown ::unknown
+
 
 namespace eval server {
     proc listen {sd host port} {
