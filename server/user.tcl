@@ -60,9 +60,9 @@ namespace eval user {
 	    set cmd $cmdlist
 	    return [uplevel 1 [list $cmd {*}$args]]
 	} elseif {[llength $cmdlist] == 0} {
-	    return "invalid command name \"$cmd\""
+	    return -code error "invalid command name \"$cmd\""
 	} else {
-	    return [concat "unknown or ambiguous command \"$cmd\": must be" [join [lrange $cmdlist 0 end-1] {, }] "or" [lindex $cmdlist end]]
+	    return -code error [concat "unknown or ambiguous command \"$cmd\": must be" [join [lrange $cmdlist 0 end-1] {, }] "or" [lindex $cmdlist end]]
 	}
     }
 }
