@@ -28,7 +28,7 @@ user allow ::navi::position {} {$ship}
 user allow ::navi::velocity {} {$ship}
 user allow ::navi::angle {} {$ship}
 
-user allow ::user::unknown ::unknown
+user allow ::user::unknown ::unknown {$ship}
 
 
 namespace eval server {

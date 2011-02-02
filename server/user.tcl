@@ -54,11 +54,11 @@ namespace eval user {
 	return $result
     }
 
-    proc unknown {cmd args} {
-	set cmdlist [info commands $cmd*]
+    proc unknown {ship cmd args} {
+	set cmdlist [interp eval $ship [list info commands $cmd*]]
 	if {[llength $cmdlist] == 1} {
 	    set cmd $cmdlist
-	    return [uplevel 1 [list $cmd {*}$args]]
+	    return [interp eval $ship [list $cmd {*}$args]]
 	} elseif {[llength $cmdlist] == 0} {
 	    return -code error "invalid command name \"$cmd\""
 	} else {
