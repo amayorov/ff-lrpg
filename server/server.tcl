@@ -110,7 +110,8 @@ while yes {
 	puts $log [concat [dict get $objects($obj) position] [dict get $objects($obj) speed]]
 	flush $log
 	draw_ship .c $obj
-	tick $obj [expr 1.0*$dt/1000]
+	do_physic $obj 1
+	do_kinematic $obj 1
     }
     
     foreach sh [.c gettags current] {
