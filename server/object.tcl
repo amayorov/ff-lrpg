@@ -63,7 +63,7 @@ namespace eval object {
     }
 
     proc xsection {objame} {
-	return {1 100}
+	return {1 5}
     }
 
     namespace eval inventory { 
@@ -274,7 +274,7 @@ proc do_physic {obj dt} {
 # Вычисляет все силы, действющие на корабль
     global objects
     set pi 3.14159
-    set viscosity 1.0
+    set viscosity 0.1
 
     if {[object type $obj]=="ship"} {
 	foreach eid [ship engines $objects($obj)] {
@@ -286,18 +286,37 @@ proc do_physic {obj dt} {
     set angle [dict get $objects($obj) angle]
     set xsection [object xsection $obj]
 
-    set speed_angle [expr atan2([lindex $speed 1],[lindex $speed 0])]
-    set speed_abs [expr hypot([lindex $speed 1],[lindex $speed 0])]
+    set mass [object mass $obj]
     
     set friction_force {}
+    
+    set projected_xsection {}
+    lappend projected_xsection [expr abs([lindex $xsection 0]*cos($angle)+[lindex $xsection 1]*sin($angle))]
+    lappend projected_xsection [expr abs([lindex $xsection 0]*sin($angle)+[lindex $xsection 1]*cos($angle))]
 
-    set delta_angle [expr $angle-$speed_angle]
-
-    foreach c $xsection f {cos sin} {
-	lappend friction_force [expr [concat -1*$viscosity*($speed_abs**2)*$f ($delta_angle)*$c]] 
+    foreach s $speed c $projected_xsection {
+	if {$speed > 0} {
+	    set sign -1.
+	} else {
+	    set sign 1.
+	}
+	lappend friction_force [expr $sign*$viscosity*($s**2)*$c] 
     }
+    
+    set ff_fixed {}
+    set ff_max_list {}
+    foreach s $speed f $friction_force {
+	set ff_max [expr -1.*$s/$dt*$mass]
+	if {abs($f) > abs($ff_max)} {
+	    lappend ff_fixed $ff_max
+	} else {
+	    lappend ff_fixed $f
+	}
+	lappend ff_max_list $ff_max
+    }
+	puts "Force: $friction_force (max $ff_max_list)"
 
-    dict lappend objects($obj) force [list $friction_force {0 0}]
+    dict lappend objects($obj) force [list $ff_fixed {0 0}]
 }
 
 proc do_kinematic {obj dt} {
