@@ -14,7 +14,7 @@ proc is {object type} {
 }
 
 namespace eval object {
-    namespace export inventory mass create type 
+    namespace export inventory mass create type xsection
     namespace ensemble create
 # Члены словаря "объекты"
 #
@@ -24,10 +24,17 @@ namespace eval object {
 # 
 # position -- список из координат
 # speed -- список из скоростей
-# angle -- положение носа.
-# angular_speed -- скорость вращения
 #
-# 
+# angle -- положение носа.
+# aspeed -- угловая скорость
+#
+# mass -- масса объекта
+# mass_center -- координаты центра масс
+#
+# xsection -- эффективная площадь сечения {лобовая боковая}
+#
+# forces -- список {сила {точка приложения}}
+#
 # icells -- информация о внутренней ячейке
 # ocells -- информация о внешней ячейке
 # В ячейке содержится имя объекта, расположенного в ней.
@@ -49,6 +56,14 @@ namespace eval object {
     
     proc mass {objname} {
 	return 1
+    }
+    
+    proc mass_center {objname} {
+	return {0 0}
+    }
+
+    proc xsection {objame} {
+	return {1 100}
     }
 
     namespace eval inventory { 
@@ -242,47 +257,80 @@ namespace eval ship {
 # Убираем топливо...
 	    dict set items($tid) left [expr $leftfuel-$fraction*$reqfuel]
 # Добавляем приращение скорости...
-	    set force [expr [force $eid]*$fraction]
-	    set current_speed [dict get $objects($sid) speed]
+	    set abs_force [expr [force $eid]*$fraction]
 	    
 	    set angle [expr [dict get $objects($sid) angle]+[dict get $engine angle]]
-	    set new_speed {}
-	    foreach c $current_speed op {cos sin} {
-		lappend new_speed [expr [concat "$c+$force/$mass*$op" "($angle)"]]
-	    }
+	    
+	    set force [list [expr $abs_force*cos($angle)] [expr $abs_force*sin($angle)]]
 
-	    dict set objects($sid) speed $new_speed
+	    dict lappend objects($sid) force [list $force {0 0}]
 
-
-	    puts "left: $leftfuel, force $force"
 	}
 
     }
 }
-proc tick {obj dt} {
+
+proc do_physic {obj dt} {
+# Вычисляет все силы, действющие на корабль
     global objects
-    set damping 0.5
-    
+    set pi 3.14159
+    set viscosity 1.0
+
     if {[object type $obj]=="ship"} {
 	foreach eid [ship engines $objects($obj)] {
 	    ship engine burn $eid $dt
 	}
     }
 
-    # Изменяем координаты корабля
+    set speed [dict get $objects($obj) speed]
+    set angle [dict get $objects($obj) angle]
+    set xsection [object xsection $obj]
+
+    set speed_angle [expr atan2([lindex $speed 1],[lindex $speed 0])]
+    set speed_abs [expr hypot([lindex $speed 1],[lindex $speed 0])]
+    
+    set friction_force {}
+
+    set delta_angle [expr $angle-$speed_angle]
+
+    foreach c $xsection f {cos sin} {
+	lappend friction_force [expr [concat -1*$viscosity*($speed_abs**2)*$f ($delta_angle)*$c]] 
+    }
+
+    dict lappend objects($obj) force [list $friction_force {0 0}]
+}
+
+proc do_kinematic {obj dt} {
+# считает движеие корабля
+    global objects
+
     set position [dict get $objects($obj) position]
     set speed [dict get $objects($obj) speed]
+    set forces [dict get $objects($obj) force]
+
+    set mass [object mass $obj]
+
+    # Складываем силы
+    set force {0 0}
+    foreach f $forces {
+	foreach i {0 1} {
+	    lset force $i [expr [lindex $force $i]+[lindex $f 0 $i]]
+	}
+    }
+
+    # Изменяем координаты корабля в фазовом пространстве
+
+    set new_speed {}
+    foreach s $speed f $force {
+	lappend new_speed [expr $s+1.0*$f/$mass*$dt]
+    }
+
     set new_position {}
     foreach c $position s $speed {
 	lappend new_position [expr $c+$s*$dt]
     }
-
-# "Вязкость космоса"
-    set new_speed {}
-    foreach s $speed {
-	lappend new_speed [expr $s*(1.-$damping*$dt)]
-    }
     
     dict set objects($obj) position $new_position
     dict set objects($obj) speed $new_speed
+    dict set objects($obj) force {}
 }

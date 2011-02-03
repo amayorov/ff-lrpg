@@ -70,7 +70,8 @@ source test.tcl
 while yes {
     foreach obj [array names objects] {
 	puts "$obj: Pos {[dict get $objects($obj) position]} Sp {[dict get $objects($obj) speed]}"
-	tick $obj 1
+	do_physic $obj 1
+	do_kinematic $obj 1
     }
     puts {}
     after 1000 {set t 0}
