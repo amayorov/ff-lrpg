@@ -2,6 +2,7 @@ package require Tcl 8.5
 package provide ff-object 0.0
 
 variable objects
+variable items
 
 proc is {object type} {
     set objtype [dict get $object type]
@@ -31,7 +32,8 @@ namespace eval object {
 # ocells -- информация о внешней ячейке
 # В ячейке содержится имя объекта, расположенного в ней.
 #
-# inventory -- словарь, содержащий информацию о всех объектах корабля
+# inventory -- словарь, содержащий предметы на корабле и их назначения
+# например, engine "Foobar"
     proc create {type name position {speed {0 0}} {angle 0}} {
 	global objects
 	set d [dict create type $type position $position speed $speed angle $angle inventory {}]
@@ -49,17 +51,19 @@ namespace eval object {
 	return 1
     }
 
-    namespace eval inventory { ;# Сокращение от inventory, ибо долго писать и много придётся использовать
+    namespace eval inventory { 
 	namespace export load list get set
 	namespace ensemble create
 
-	proc load {objname what} {
-# load -- это загрузить в инвентарь и ячейки. Для фунциклирования необходимо подключить оборудование специальной командой
+	proc load {objname id role} {
+# load -- это загрузить в инвентарь и ячейки. 
+	    # Загружается предмет с id под именем name
 	    global objects
-	    ::set inv [dict get $objects($objname) inventory]
-	    ::set whatname [dict get $what name]
-	    dict append inv $whatname $what
-	    dict set objects($objname) inventory $inv
+	    global items
+	    if {![dict exists $objects($objname) inventory $role]} {
+		dict set objects($objname) inventory $role $id
+		dict set items($id) ship $objname
+	    }
 	}
 
 	proc list {objname} {
@@ -75,8 +79,10 @@ namespace eval object {
 	}
 	proc get {objname invname} {
 	    global objects
+	    global items
 	    if [exists $objname $invname] {
-		return [dict get $objects($objname) inventory $invname]
+		set id [dict get $objects($objname) inventory $invname]
+		return $items($id)
 	    } else {
 		return
 	    }
@@ -84,13 +90,37 @@ namespace eval object {
 	proc set {objname invname args} {
 	    global objects
 	    if {[exists $objname $invname]} {
+		set id [dict get $objects($objname) inventory $invname]
 		foreach {key val} $args {
-		    dict set objects($objname) inventory $invname $key $val
+		    dict set items($id) $key $val
 		}
 	    }
 	}
     }
 
+}
+
+namespace eval item {
+    namespace export create
+    namespace ensemble create
+
+
+    # словарь item содержит обязательные члены: 
+    # type
+    # mass
+    # ship
+    proc create_id {type} {
+	return ${type}_[clock clicks]
+    }
+    proc create {type args} {
+	global items
+	set id [create_id $type]
+# создать новый id, записать его в массив items
+	foreach {tag value} [concat [list id $id type $type ship {}] $args] {
+	    dict set items($id) $tag $value
+	}
+	return $id
+    }
 }
 
 namespace eval ship {
@@ -99,11 +129,12 @@ namespace eval ship {
     namespace ensemble create
 # callsign -- позывной -- перенести в рубку
     proc engines {s} {
+	global items
 	set inv [dict get $s inventory]
 	set result {}
 	dict for {key val} $inv {
-	    if {[is $val engine]} {
-		lappend result $key
+	    if {[is $items($val) engine]} {
+		lappend result $val
 	    }
 	}
 	return $result
@@ -119,13 +150,17 @@ namespace eval ship {
 	return $result
     }
 
-    proc throttle {ship engine value} {
+    proc throttle {ship ename value} {
+	# можно сделать так, чтобы этой командой крутилось состояние маршевого двигателя, который имеен имя "engine"
+	global items
+	global objects
 	if {$value < 0} { set value 0} 
 	if {$value > 1} { set value 1} 
-	if {[is [object inv get $ship $engine] engine]} {
-	    object inv set $ship $engine throttle $value
+	set eid [dict get $objects($ship) inventory $ename]
+	if {[is $items($eid) engine]} {
+	    dict set items($eid) throttle $value
 	}
-	return [list $engine $value]
+	return [list $ename $value]
     }
 
     proc turn {ship angle} {
@@ -156,14 +191,18 @@ namespace eval ship {
 	    return 1.
 	}
 
-	proc force {engine} {
+	proc force {eid} {
 # возвращает тягу двигателя
+	    global items
+	    set engine $items($eid)
 	    set throttle [dict get $engine throttle]
 	    return [expr 1.*$throttle]
 	}
 
-	proc consumption {engine} {
+	proc consumption {eid} {
 	    #Процедура возвращает потребление топлива двигателем в зависимости от состояния ручки газа и т.п.
+	    global items
+	    set engine $items($eid)
 	    if {$engine == {} } {
 		# Внезапно, двигатель не найден
 	    } else {
@@ -173,37 +212,37 @@ namespace eval ship {
 	    }
 	}
 
-	proc burn {engine dt} {
-	    if {[interp issafe {}]} {
-		# смертный решил воспользоваться... Обломись =)
-		# надо бы перенести отсюда
-		return
-	    }
+	proc burn {eid dt} {
+
 	    global objects
-	    set sid [dict get $engine sid]
+	    global items
+
+	    set engine $items($eid)
+	    set sid [dict get $engine ship]
 	    if {$sid == {} } {
 # Двигатель не установлен на корабль
 		puts stderr "Engine not installed!"
 		return
 	    }
-	    set tank [dict get $engine tank]
-	    if {![is [object inv get $sid $tank] tank]} {
+	    set tid [dict get $engine tank]
+	    set tank $items($tid)
+	    if {![is $tank tank]} {
 # То, к чему подключён двигателем, баком не является...
 		puts stderr "No tank connected!"
 		return
 	    }
 	    set mass [object mass $objects($sid)]
-	    set leftfuel [dict get $objects($sid) inventory $tank left]
-	    set reqfuel [expr 1.0*[consumption $engine]*$dt]
+	    set leftfuel [dict get $tank left]
+	    set reqfuel [expr 1.0*[consumption $eid]*$dt]
 	    if {$leftfuel < $reqfuel} {
 		set fraction [expr 1.0*$leftfuel/$reqfuel]
 	    } else {
 		set fraction 1.0
 	    }
 # Убираем топливо...
-	    dict set objects($sid) inventory $tank left [expr $leftfuel-$fraction*$reqfuel]
+	    dict set items($tid) left [expr $leftfuel-$fraction*$reqfuel]
 # Добавляем приращение скорости...
-	    set force [expr [force $engine]*$fraction]
+	    set force [expr [force $eid]*$fraction]
 	    set current_speed [dict get $objects($sid) speed]
 	    
 	    set angle [expr [dict get $objects($sid) angle]+[dict get $engine angle]]
@@ -215,37 +254,6 @@ namespace eval ship {
 	    dict set objects($sid) speed $new_speed
 	}
 
-	proc install {engine ship {angle 0}} {
-# странная процедура, надо бы придумать, что с ней делать
-# для простого смертного -- слишком большая власть
-	    if {[interp issafe {}]} {
-		# смертный решил этой властью воспользоваться...
-		return
-	    }
-	    global objects
-	    set inv [dict get $objects($ship) inventory]
-	    set enginename [dict get $engine name]
-	    if {![dict exists $inv $enginename]} {
-		# Подключаем незагруженный двигатель
-		puts stderr "Installing non-loaded engine!!!"
-		return
-	    } 
-	    dict set objects($ship) inventory $enginename throttle 0.
-	    dict set objects($ship) inventory $enginename sid $ship
-	    dict set objects($ship) inventory $enginename angle $angle
-	    dict set objects($ship) inventory $enginename tank {}
-	}
-
-	proc connect {engine tank} {
-	    global objects
-	    set sid [dict get $engine sid]
-	    if {$sid == {} } {
-		puts stderr "Trying to install unconnected engine!"
-		return
-	    }
-	    set enginename [dict get $engine name]
-	    dict set objects($sid) inventory $enginename tank $tank
-	}
     }
 }
 proc tick {obj dt} {
@@ -253,9 +261,8 @@ proc tick {obj dt} {
     set damping 0.5
     
     if {[object type $obj]=="ship"} {
-	foreach enginename [ship engines $objects($obj)] {
-	    set eng [dict get $objects($obj) inventory $enginename]
-	    ship engine burn $eng $dt
+	foreach eid [ship engines $objects($obj)] {
+	    ship engine burn $eid $dt
 	}
     }
 

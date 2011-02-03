@@ -1,22 +1,15 @@
 object create ship "Destiny" {0 0} {0 0}
 
-set e [dict create name "Blah" type engine]
-set t [dict create name "Can" type tank left 100.]
+set t [item create tank left 10.]
+set e [item create engine tank $t throttle 0 angle 0]
 
-object inv load Destiny $e
-object inv load Destiny $t
-
-ship engine install [object inv get Destiny Blah] Destiny
-ship engine connect [object inv get Destiny Blah] Can
-
+object inv load Destiny $e {main}
+object inv load Destiny $t {main tank}
 
 object create ship "Foobar" {1 1} {0 0}
 
-set e1 [dict create name "Blah" type engine]
-set t1 [dict create name "Can" type tank left 100.]
+set t [item create tank left 10.]
+set e [item create engine tank $t throttle 0 angle 0]
 
-object inv load Foobar $e1
-object inv load Foobar $t1
-
-ship engine install [object inv get Foobar Blah] Foobar
-ship engine connect [object inv get Foobar Blah] Can
+object inv load Foobar $e {main}
+object inv load Foobar $t {main tank}
