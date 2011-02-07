@@ -63,7 +63,7 @@ namespace eval object {
     }
 
     proc xsection {objame} {
-	return {1 5}
+	return {1 20}
     }
 
     namespace eval inventory { 
@@ -274,7 +274,7 @@ proc do_physic {obj dt} {
 # Вычисляет все силы, действющие на корабль
     global objects
     set pi 3.14159
-    set viscosity 0.1
+    set viscosity 0.5
 
     if {[object type $obj]=="ship"} {
 	foreach eid [ship engines $objects($obj)] {
@@ -295,14 +295,13 @@ proc do_physic {obj dt} {
     lappend projected_xsection [expr abs([lindex $xsection 0]*sin($angle)+[lindex $xsection 1]*cos($angle))]
 
     foreach s $speed c $projected_xsection {
-	if {$speed > 0} {
+	if {$s > 0} {
 	    set sign -1.
 	} else {
 	    set sign 1.
 	}
 	lappend friction_force [expr $sign*$viscosity*($s**2)*$c] 
     }
-    
     set ff_fixed {}
     set ff_max_list {}
     foreach s $speed f $friction_force {
@@ -314,8 +313,6 @@ proc do_physic {obj dt} {
 	}
 	lappend ff_max_list $ff_max
     }
-	puts "Force: $friction_force (max $ff_max_list)"
-
     dict lappend objects($obj) force [list $ff_fixed {0 0}]
 }
 
