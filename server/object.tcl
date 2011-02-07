@@ -14,7 +14,7 @@ proc is {object type} {
 }
 
 namespace eval object {
-    namespace export inventory mass create type xsection
+    namespace export inventory mass create type xsection moment
     namespace ensemble create
 # Члены словаря "объекты"
 #
@@ -30,6 +30,7 @@ namespace eval object {
 #
 # mass -- масса объекта
 # mass_center -- координаты центра масс
+# moment -- момент инерции объекта
 #
 # xsection -- эффективная площадь сечения {лобовая боковая}
 #
@@ -41,9 +42,9 @@ namespace eval object {
 #
 # inventory -- словарь, содержащий предметы на корабле и их назначения
 # например, engine "Foobar"
-    proc create {type name position {speed {0 0}} {angle 0}} {
+    proc create {type name position {speed {0 0}} {angle 0} {aspeed 0}} {
 	global objects
-	set d [dict create type $type position $position speed $speed angle $angle inventory {}]
+	set d [dict create type $type position $position speed $speed angle $angle aspeed $aspeed inventory {}]
 	set objects($name) $d
 	return $d
     }
@@ -60,6 +61,10 @@ namespace eval object {
     
     proc mass_center {objname} {
 	return {0 0}
+    }
+    
+    proc moment {objname} {
+	return 1.
     }
 
     proc xsection {objame} {
@@ -287,6 +292,7 @@ proc do_physic {obj dt} {
     set xsection [object xsection $obj]
 
     set mass [object mass $obj]
+    set moment [object moment $obj]
     
     set friction_force {}
     
@@ -313,7 +319,7 @@ proc do_physic {obj dt} {
 	}
 	lappend ff_max_list $ff_max
     }
-    dict lappend objects($obj) force [list $ff_fixed {0 0}]
+    dict lappend objects($obj) force [list $ff_fixed {-1 0}]
 }
 
 proc do_kinematic {obj dt} {
@@ -322,17 +328,26 @@ proc do_kinematic {obj dt} {
 
     set position [dict get $objects($obj) position]
     set speed [dict get $objects($obj) speed]
+    set aspeed [dict get $objects($obj) aspeed]
     set forces [dict get $objects($obj) force]
+    set angle [dict get $objects($obj) angle]
 
     set mass [object mass $obj]
+    set mass_moment [object moment $obj]
 
     # Складываем силы
     set force {0 0}
+    set force_moment 0.
     foreach f $forces {
 	foreach i {0 1} {
 	    lset force $i [expr [lindex $force $i]+[lindex $f 0 $i]]
 	}
+# считается, что центр масс находится в (0,0)!
+# нужно добавить процедур в expr, которые могли бы работать с векторами!
+	set force_moment [expr $force_moment+[lindex $f 1 0]*[lindex $f 0 1]+[lindex $f 1 1]*[lindex $f 0 0]]
     }
+
+
 
     # Изменяем координаты корабля в фазовом пространстве
 
@@ -340,6 +355,10 @@ proc do_kinematic {obj dt} {
     foreach s $speed f $force {
 	lappend new_speed [expr $s+1.0*$f/$mass*$dt]
     }
+
+    set aspeed [expr $aspeed+$force_moment*$dt/$mass_moment]
+
+    puts "Angular speed: $aspeed, moment $force_moment, angle $angle"
 
     set new_position {}
     foreach c $position s $speed {
@@ -349,4 +368,5 @@ proc do_kinematic {obj dt} {
     dict set objects($obj) position $new_position
     dict set objects($obj) speed $new_speed
     dict set objects($obj) force {}
+    dict set objects($obj) angle [expr $angle+$aspeed*$dt]
 }
