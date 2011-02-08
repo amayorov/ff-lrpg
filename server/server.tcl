@@ -76,6 +76,7 @@ proc draw_ship {widget name} {
     set points { -3 -2 5 0 -3 2 -2 0}
     set rotated_points {}
     foreach {x y} $points {
+	#set y [expr -1.*$y]
 	lappend rotated_points [expr $x*cos($a)-$y*sin($a)+[lindex  $pos 0]*$scale+$offset(x)]m [expr $x*sin($a)+$y*cos($a)+[lindex $pos 1]*$scale+$offset(y)]m
     }
     if {[$widget gettags $name] != {}} {
