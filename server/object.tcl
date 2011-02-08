@@ -268,7 +268,7 @@ namespace eval ship {
 	    
 	    set force [list [expr $abs_force*cos($angle)] [expr $abs_force*sin($angle)]]
 
-	    dict lappend objects($sid) force [list $force {0 0}]
+	    dict lappend objects($sid) force [list $force [dict get $engine position]]
 
 	}
 
@@ -319,7 +319,7 @@ proc do_physic {obj dt} {
 	}
 	lappend ff_max_list $ff_max
     }
-    dict lappend objects($obj) force [list $ff_fixed {-1 0}]
+    dict lappend objects($obj) force [list $ff_fixed {0 0}]
 }
 
 proc do_kinematic {obj dt} {
@@ -344,7 +344,10 @@ proc do_kinematic {obj dt} {
 	}
 # считается, что центр масс находится в (0,0)!
 # нужно добавить процедур в expr, которые могли бы работать с векторами!
-	set force_moment [expr $force_moment+[lindex $f 1 0]*[lindex $f 0 1]+[lindex $f 1 1]*[lindex $f 0 0]]
+	set f1 [expr [lindex $f 0 0]*cos(-1.*$angle)-[lindex $f 0 1 ]*sin(-1*$angle)]
+	lappend f1 [expr [lindex $f 0 0]*sin(-1.*$angle)+[lindex $f 0 1]*cos(-1*$angle)]
+
+	set force_moment [expr $force_moment+([lindex $f 1 0]*[lindex $f1 0])-([lindex $f 1 1]*[lindex $f1 0])]
     }
 
 
