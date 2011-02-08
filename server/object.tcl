@@ -372,4 +372,5 @@ proc do_kinematic {obj dt} {
     dict set objects($obj) speed $new_speed
     dict set objects($obj) force {}
     dict set objects($obj) angle [expr $angle+$aspeed*$dt]
+    dict set objects($obj) aspeed $aspeed
 }
