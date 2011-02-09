@@ -290,6 +290,7 @@ proc do_physic {obj dt} {
     set speed [dict get $objects($obj) speed]
     set angle [dict get $objects($obj) angle]
     set xsection [object xsection $obj]
+    set h 1. ;# Средняя высота объекта
 
     set mass [object mass $obj]
     set moment [object moment $obj]
@@ -306,12 +307,12 @@ proc do_physic {obj dt} {
 	} else {
 	    set sign 1.
 	}
-	lappend friction_force [expr $sign*$viscosity*($s**2)*$c] 
+	lappend friction_force [expr {$sign*$viscosity*($s**2)*$c*$h}] 
     }
     set ff_fixed {}
     set ff_max_list {}
     foreach s $speed f $friction_force {
-	set ff_max [expr -1.*$s/$dt*$mass]
+	set ff_max [expr {-1.*$s/$dt*$mass}]
 	if {abs($f) > abs($ff_max)} {
 	    lappend ff_fixed $ff_max
 	} else {
@@ -320,9 +321,13 @@ proc do_physic {obj dt} {
 	lappend ff_max_list $ff_max
     }
     dict lappend objects($obj) force [list $ff_fixed {0 0}]
-}
+# В целях упрощения поведения корабля считаем, что момент силы трения
+#    завсисит ислючительно от угловой скорости корабля
+    set aspeed [dict get $objects($obj) aspeed]
+    set friction_momentum [expr ($aspeed > 0 ? -1. :1.)*$viscosity*($aspeed**2)*([join $projected_xsection "+"])*$h]
 
-proc do_kinematic {obj dt} {
+#-----------------------------------------------------------------------
+
 # считает движеие корабля
     global objects
 
@@ -337,7 +342,8 @@ proc do_kinematic {obj dt} {
 
     # Складываем силы
     set force {0 0}
-    set force_moment 0.
+#    set force_moment 0.
+    set force_moment $friction_momentum
     foreach f $forces {
 	foreach i {0 1} {
 	    lset force $i [expr [lindex $force $i]+[lindex $f 0 $i]]
@@ -361,7 +367,7 @@ proc do_kinematic {obj dt} {
 
     set aspeed [expr $aspeed+$force_moment*$dt/$mass_moment]
 
-    puts "Angular speed: $aspeed, moment $force_moment, angle $angle"
+    puts "Angular speed: $aspeed, momentum $force_moment, angle $angle"
 
     set new_position {}
     foreach c $position s $speed {

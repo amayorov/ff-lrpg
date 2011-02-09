@@ -112,7 +112,6 @@ while yes {
 	flush $log
 	draw_ship .c $obj
 	do_physic $obj 1
-	do_kinematic $obj 1
     }
     
     foreach sh [.c gettags current] {
