@@ -325,6 +325,10 @@ proc do_physic {obj dt} {
 #    завсисит ислючительно от угловой скорости корабля
     set aspeed [dict get $objects($obj) aspeed]
     set friction_momentum [expr ($aspeed > 0 ? -1. :1.)*$viscosity*($aspeed**2)*([join $projected_xsection "+"])*$h]
+    set fm_max [expr {-1.*$aspeed/$dt*$moment}]
+    if {abs($friction_momentum) > abs ($fm_max)} {
+	set friction_momentum $fm_max
+    }
 
 #-----------------------------------------------------------------------
 
