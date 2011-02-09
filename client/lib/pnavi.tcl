@@ -1,7 +1,7 @@
 package require Tcl 8.5
 package require Tk 8.5
 
-package require ff-network
+package require ff-client-network
 
 package provide ff-p-navi 0.0
 

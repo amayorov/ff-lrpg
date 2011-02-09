@@ -1,9 +1,9 @@
 package require Tcl 8.5
-package provide ff-network 0.0
+package provide ff-client-network 0.0
 
 namespace eval net {
     namespace export connect disconnect send
-    variable sd
+    namespace ensemble create
 
     proc connect {addr {port 9999}} {
 	variable sd
@@ -13,6 +13,7 @@ namespace eval net {
     }
 
     proc send {cmd} {
+	variable sd
 	puts $sd [list gui $cmd]
 	set ans [gets $sd]
 	return [lindex $ans 1]
