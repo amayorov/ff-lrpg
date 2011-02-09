@@ -27,6 +27,7 @@ user allow ::object::inventory::list ::inv {$ship}
 user allow ::navi::position {} {$ship}
 user allow ::navi::velocity {} {$ship}
 user allow ::navi::angle {} {$ship}
+user allow ::navi::radar {} {$ship}
 
 user allow ::user::unknown ::unknown {$ship}
 

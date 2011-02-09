@@ -35,4 +35,30 @@ namespace eval navi {
 	global objects
 	return [format "%.1f" [dict get $objects($shipname) angle]]
     }
+
+    proc rel_coords {shipname victim} {
+	global objects
+	set p1 [dict get $objects($shipname) position]
+	set p2 [dict get $objects($victim) position]
+	set a [dict get $objects($shipname) angle]
+	set y [expr [lindex $p2 1]-[lindex $p1 1]]
+	set x [expr [lindex $p2 0]-[lindex $p1 0]] 
+	set angle [expr {atan2($y,$x)-$a}]
+	set distance [expr {hypot($y,$x)}]
+	return [list $distance $angle]
+    }
+
+    proc radar {shipname} {
+	#процедура возвращает координаты ближайших объектов и информацию о них
+	global objects
+	set found {}
+	foreach obj [array names objects] {
+	    if {! ($obj eq $shipname) } {
+		set c [rel_coords $shipname $obj]
+		lappend found [concat $obj $c]
+	    }
+	}
+	return $found
+    }
+
 }
