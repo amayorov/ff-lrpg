@@ -371,7 +371,7 @@ proc do_physic {obj dt} {
 
     set aspeed [expr $aspeed+$force_moment*$dt/$mass_moment]
 
-    puts "Angular speed: $aspeed, momentum $force_moment, angle $angle"
+    #puts "Angular speed: $aspeed, momentum $force_moment, angle $angle"
 
     set new_position {}
     foreach c $position s $speed {

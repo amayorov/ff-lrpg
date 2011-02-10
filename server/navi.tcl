@@ -40,12 +40,14 @@ namespace eval navi {
 	global objects
 	set p1 [dict get $objects($shipname) position]
 	set p2 [dict get $objects($victim) position]
-	set a [dict get $objects($shipname) angle]
+	set a1 [dict get $objects($shipname) angle]
+	set a2 [dict get $objects($victim) angle]
 	set y [expr [lindex $p2 1]-[lindex $p1 1]]
 	set x [expr [lindex $p2 0]-[lindex $p1 0]] 
-	set angle [expr {atan2($y,$x)-$a}]
+	set angle [expr {atan2($y,$x)-$a1}]
 	set distance [expr {hypot($y,$x)}]
-	return [list $distance $angle]
+	set relangle [expr {$a2-$a1}]
+	return [list $distance $angle $relangle]
     }
 
     proc radar {shipname} {

@@ -10,7 +10,7 @@ object inv load Destiny $e1 {left}
 object inv load Destiny $e2 {right}
 object inv load Destiny $t {main tank}
 
-object create ship "Foobar" {0 0} {0 0}
+object create ship "Foobar" {0 0} {0 0} 1.57
 
 set t [item create tank left 10.]
 set e [item create engine tank $t throttle 0 angle 0 position {0 0}]

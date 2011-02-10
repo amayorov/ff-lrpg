@@ -6,28 +6,38 @@ package require Tk 8.5
 package require ff-p-navi
 source style.tcl
 
+namespace eval event {}
+
 namespace eval gui {
     
     proc enter_command {} {
 	set cmd [.cmdline.entry get]
-	.cmdlog.text insert end $cmd command "\n"
+	.cmdlog.text insert end "\n" {} $cmd command "\n"
 	set result [net send $cmd]
-	.cmdlog.text insert end $result result "\n"
+	.cmdlog.text insert end $result result 
+	.cmdlog.text yview end
 	.cmdline.entry delete 0 end
+    }
+
+    proc update_radar_trig {args} {
+	navi::update_radar
+	after 1000 set ::event::radar 1
     }
 
     grid columnconfigure . 0 -weight 1
     grid rowconfigure . 0 -weight 1
+
+
     ttk::frame .cmdline -padding 2
     ttk::label .cmdline.label -text ">"
     ttk::entry .cmdline.entry 
     grid .cmdline.label .cmdline.entry 
 
     ttk::frame .cmdlog -padding 2
-    text .cmdlog.text -background black -foreground green -height 3 -takefocus 0
-    .cmdlog.text tag configure result -foreground gray
-
-    grid .cmdlog.text -sticky nsew
+    text .cmdlog.text -background black -foreground green -height 3 -takefocus 0 -yscrollcommand [list .cmdlog.sbar set]
+    .cmdlog.text tag configure result -foreground gray 
+    ttk::scrollbar .cmdlog.sbar -orient vertical -command [list .cmdlog.text yview]
+    grid .cmdlog.text .cmdlog.sbar -sticky nsew
     grid columnconfigure .cmdlog 0 -weight 1
 
     grid configure .cmdline.label -sticky nsw
@@ -47,6 +57,9 @@ namespace eval gui {
     grid .cmdline -sticky esw
     
     bind .cmdline.entry <KeyPress-Return> {gui::enter_command} 
+
+    trace add variable ::event::radar write ::gui::update_radar_trig
 }
 
 net connect 127.0.0.1
+set ::event::radar 1
