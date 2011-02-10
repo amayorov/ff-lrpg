@@ -18,6 +18,10 @@ namespace eval gui {
 	    variable p
 	    set p $parent
 	    set copts {}
+
+	    set speed ???
+	    set position ???
+
 	    foreach opt {background} {
 		lappend copts -$opt [::ttk::style lookup TCanvas -$opt]
 	    }
@@ -47,9 +51,16 @@ namespace eval gui {
 	proc update_radar {} {
 	    variable p
 	    set contacts [net send "navi radar"]
+	    set speed [net send "navi v"]
+	    set position [net send "navi p"]
+	    set widget $p.left.radar.screen
 	    foreach contact $contacts {
-		draw_ship $p.left.radar.screen {*}$contact
+		draw_ship $widget {*}$contact
 	    }
+	    puts $position
+	    # Поправить выдачу команд в навигации!!
+	    $widget itemconfigure text_position -text [format "%.1f %.1f" {*}$position]
+	    $widget itemconfigure text_speed -text $speed
 	}
 
 	proc draw_ship {widget name dist angle {phase 0}} {
@@ -81,18 +92,20 @@ namespace eval gui {
 	    } else {
 		$widget create polygon $drawn_points -tags $name -fill green -outline green
 	    }
+	}
 
-	    proc draw_radar_grid {widget} {
-		set lines 4
-		set x [winfo width $widget]
-		set y [winfo height $widget]
-		set r [expr min($x,$y)/2]
-		$widget delete radargrid
-		$widget create oval [expr $x/2-$r] [expr $y/2-$r] [expr $x/2+$r] [expr $y/2+$r] -outline darkgreen -tag radargrid
-		for {set a 0} {$a < pi()} {set a [expr $a+pi()/$lines]} {
-		    $widget create line [expr $x/2-$r*cos($a)] [expr $y/2-$r*sin($a)] [expr $x/2+$r*cos($a)] [expr $y/2+$r*sin($a)] -tag radargrid -fill darkgreen
-		}
+	proc draw_radar_grid {widget} {
+	    set lines 4
+	    set x [winfo width $widget]
+	    set y [winfo height $widget]
+	    set r [expr min($x,$y)/2]
+	    $widget delete radargrid
+	    $widget create oval [expr $x/2-$r] [expr $y/2-$r] [expr $x/2+$r] [expr $y/2+$r] -outline darkgreen -tag radargrid
+	    for {set a 0} {$a < pi()} {set a [expr $a+pi()/$lines]} {
+		$widget create line [expr $x/2-$r*cos($a)] [expr $y/2-$r*sin($a)] [expr $x/2+$r*cos($a)] [expr $y/2+$r*sin($a)] -tag radargrid -fill darkgreen
 	    }
+	    $widget create text 50 10 -tag text_speed -text ??? -fill darkgreen
+	    $widget create text 50 [expr $y-10] -tag text_position -text ??? -fill darkgreen
 
 	}
     }
