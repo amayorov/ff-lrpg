@@ -59,6 +59,9 @@ namespace eval gui {
     bind .cmdline.entry <KeyPress-Return> {gui::enter_command} 
 
     trace add variable ::event::radar write ::gui::update_radar_trig
+    
+    focus .cmdline.entry
+    grab .cmdline.entry
 }
 
 net connect 127.0.0.1
