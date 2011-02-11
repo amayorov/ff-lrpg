@@ -27,20 +27,36 @@ namespace eval gui {
 	    }
 	    ttk::frame $p.left 
 	    ttk::frame $p.right  -width 100m
+
 	    ttk::frame $p.left.radar -padding 2
 
 	    canvas $p.left.radar.screen -width 100m -height 100m {*}$copts
 	    bind $p.left.radar.screen <Configure> [list ::gui::navi::draw_radar_grid $p.left.radar.screen]
 	    ::ttk::frame $p.left.b -height 30m
 	    
-	    grid $p.left.radar.screen -sticky nsew
-	    grid columnconfigure $p.left.radar 0 -weight 1
-	    grid rowconfigure $p.left.radar 0 -weight 1
+	    pack $p.left.radar.screen -fill both
 	    
 	    grid $p.left.radar -sticky nsew
 	    grid $p.left.b -sticky nesw
 	    grid columnconfigure $p.left 0 -weight 1
 	    grid rowconfigure $p.left 0 -weight 1
+
+	    ttk::frame $p.right.status -height 30m 
+	    ttk::frame $p.right.contacts  -padding 2
+
+	    ttk::treeview $p.right.contacts.list -columns {distance angle}
+	    $p.right.contacts.list heading #0 -text "Object"
+	    $p.right.contacts.list column #0 -stretch 1
+	    $p.right.contacts.list heading 0 -text "Distance"
+	    $p.right.contacts.list column 0 -width 80
+	    $p.right.contacts.list heading 1 -text "Angle"
+	    $p.right.contacts.list column 1 -width 50
+
+	    pack $p.right.contacts.list -fill both
+
+	    grid $p.right.status -sticky ew
+	    grid $p.right.contacts -sticky ew 
+	    grid columnconfigure $p.right 0 -weight 1
 
 	    grid $p.left $p.right -sticky nsew
 	    grid columnconfigure $p 0 -weight 1
@@ -56,8 +72,8 @@ namespace eval gui {
 	    set widget $p.left.radar.screen
 	    foreach contact $contacts {
 		draw_ship $widget {*}$contact
+		add_contact $p.right.contacts.list {*}$contact
 	    }
-	    puts $position
 	    # Поправить выдачу команд в навигации!!
 	    $widget itemconfigure text_position -text [format "%.1f %.1f" {*}$position]
 	    $widget itemconfigure text_speed -text $speed
@@ -93,6 +109,13 @@ namespace eval gui {
 		$widget create polygon $drawn_points -tags $name -fill green -outline green
 	    }
 	}
+	proc add_contact {widget name dist angle {phase 0}} {
+	    if {![$widget exists $name]} {
+		$widget insert {} 0 -id $name -text $name
+	    } 
+	    $widget set $name distance $dist
+	    $widget set $name angle $angle
+	}
 
 	proc draw_radar_grid {widget} {
 	    set lines 4
@@ -104,8 +127,8 @@ namespace eval gui {
 	    for {set a 0} {$a < pi()} {set a [expr $a+pi()/$lines]} {
 		$widget create line [expr $x/2-$r*cos($a)] [expr $y/2-$r*sin($a)] [expr $x/2+$r*cos($a)] [expr $y/2+$r*sin($a)] -tag radargrid -fill darkgreen
 	    }
-	    $widget create text 50 10 -tag text_speed -text ??? -fill darkgreen
-	    $widget create text 50 [expr $y-10] -tag text_position -text ??? -fill darkgreen
+	    $widget create text 50 10 -tags {text_speed radargrid} -text ??? -fill darkgreen
+	    $widget create text 50 [expr $y-10] -tags {text_position radargrid} -text ??? -fill darkgreen
 
 	}
     }
