@@ -77,15 +77,25 @@ namespace eval gui {
 	    # Поправить выдачу команд в навигации!!
 	    $widget itemconfigure text_position -text [format "%.1f %.1f" {*}$position]
 	    $widget itemconfigure text_speed -text $speed
+	    $p.right.contacts.list tag configure asteroid -foreground gray
 	}
 
-	proc draw_ship {widget name dist angle {phase 0}} {
+	proc draw_ship {widget name type dist angle {phase 0}} {
 	    set offset(x) [expr [winfo width $widget]/2]
 	    set offset(y) [expr [winfo height $widget]/2]
 	    set scale 10
 	    #set a [dict get $sinfo angle]
 	    set a [expr $phase+pi()/2]
-	    set points {-3 -2 5 0 -3 2 -2 0}
+	    switch $type {
+		ship {
+		    set color "green"
+		    set points {-3 -2 5 0 -3 2 -2 0}
+		}
+		default {
+		    set color "gray"
+		    set points {-3 2 -1 1 1 3 3 0 2 -2 -2 -3}
+		}
+	    }
 	    set drawn_points {}
 
 # Здесь странное расположение синусов и косинусов, ибо оптимизация
@@ -106,12 +116,12 @@ namespace eval gui {
 	    if {[$widget gettags $name] != {}} {
 		$widget coords $name $drawn_points
 	    } else {
-		$widget create polygon $drawn_points -tags $name -fill green -outline green
+		$widget create polygon $drawn_points -tags [list $name $type] -fill $color -outline $color
 	    }
 	}
-	proc add_contact {widget name dist angle {phase 0}} {
+	proc add_contact {widget name type dist angle {phase 0}} {
 	    if {![$widget exists $name]} {
-		$widget insert {} 0 -id $name -text $name
+		$widget insert {} 0 -id $name -text $name -tags $type
 	    } 
 	    $widget set $name distance $dist
 	    $widget set $name angle $angle

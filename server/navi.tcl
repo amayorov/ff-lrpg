@@ -57,7 +57,8 @@ namespace eval navi {
 	foreach obj [array names objects] {
 	    if {! ($obj eq $shipname) } {
 		set c [rel_coords $shipname $obj]
-		lappend found [concat $obj $c]
+		set type [object type $obj]
+		lappend found [concat $obj $type $c]
 	    }
 	}
 	return $found

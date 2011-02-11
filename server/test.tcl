@@ -25,3 +25,8 @@ object inv load Foobar $e2 {r1}
 object inv load Foobar $e3 {l2}
 object inv load Foobar $e4 {r2}
 object inv load Foobar $t {main tank}
+
+object create asteroid "A00001" {100 10}
+object create asteroid "A00002" {50 70}
+object create asteroid "A00003" {-10 50}
+object create asteroid "A00004" {-30 -30}
