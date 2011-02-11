@@ -68,17 +68,18 @@ namespace eval server {
 }
 
 proc draw_ship {widget name} {
-    set offset(x) 50
-    set offset(y) 50
-    set scale 10
+    set offset(x) [expr [winfo width $widget]/2]
+    set offset(y) [expr [winfo height $widget]/2]
+    set scale 1.
     set sinfo $::objects($name)
     set a [dict get $sinfo angle]
     set pos [dict get $sinfo position]
-    set points { -3 -2 5 0 -3 2 -2 0}
+    set points { -10 -4 10 0 -10 4 -4 0}
     set rotated_points {}
+    set x0 [expr $offset(x)+[lindex $pos 0]*$scale]
+    set y0 [expr $offset(y)-[lindex $pos 1]*$scale]
     foreach {x y} $points {
-	#set y [expr -1.*$y]
-	lappend rotated_points [expr $x*cos($a)-$y*sin($a)+[lindex  $pos 0]*$scale+$offset(x)]m [expr $x*sin($a)+$y*cos($a)+[lindex $pos 1]*$scale+$offset(y)]m
+	lappend rotated_points [expr $x*cos($a)-$y*sin($a)+$x0] [expr $y0-($x*sin($a)+$y*cos($a))]
     }
     if {[$widget gettags $name] != {}} {
 	$widget coords $name $rotated_points
