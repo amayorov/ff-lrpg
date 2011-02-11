@@ -34,7 +34,7 @@ namespace eval gui {
 	    bind $p.left.radar.screen <Configure> [list ::gui::navi::draw_radar_grid $p.left.radar.screen]
 	    ::ttk::frame $p.left.b -height 30m
 	    
-	    pack $p.left.radar.screen -fill both
+	    pack $p.left.radar.screen -fill both -expand yes
 	    
 	    grid $p.left.radar -sticky nsew
 	    grid $p.left.b -sticky nesw
