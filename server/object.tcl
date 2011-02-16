@@ -1,4 +1,5 @@
 package require Tcl 8.5
+
 package provide ff-object 0.0
 
 variable objects
@@ -45,10 +46,11 @@ namespace eval object {
     proc create {type name position {speed {0 0}} {angle 0} {aspeed 0}} {
 	global objects
 	set d [dict create type $type position $position speed $speed angle $angle aspeed $aspeed inventory {}]
-	set objects($name) $d
 	if {$type eq "ship"} {
 	    interp create -safe $name
+	    dict set d auto {}
 	}
+	set objects($name) $d
 	return $d
     }
 

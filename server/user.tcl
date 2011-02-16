@@ -5,7 +5,7 @@ package provide ff-user 0.0
 # Файл содержит одну-единственную команду user
 # Через неё делается всё...
 namespace eval user {
-    namespace export run allow deny
+    namespace export run allow deny source auto do_autos init
     namespace ensemble create
 
     set allowed {}
@@ -31,10 +31,10 @@ namespace eval user {
 	}
     }
 
-    proc run {ship cmd} {
-	variable allowed
+    proc init {ship} {
 	global objects
 	#interp create -safe $ship
+	variable allowed
 	# выключить потом, нечего гадить в stdout
 	interp share {} stdout $ship
 # Может, вообще set выключить, заодно и шаманить с внутренним состоянием сервера не получится...
@@ -49,8 +49,12 @@ namespace eval user {
 	    interp eval $ship namespace inscope $n {namespace export *}
 	    interp eval $ship namespace inscope $n {namespace ensemble create}
 	}
-	catch {interp eval $ship $cmd} result
+	user source $ship default_scripts.tcl
 	#interp delete $ship
+    }
+
+    proc run {ship cmd} {
+	catch {interp eval $ship $cmd} result
 	return $result
     }
 
@@ -63,6 +67,25 @@ namespace eval user {
 	    return -code error "invalid command name \"$cmd\""
 	} else {
 	    return -code error [concat "unknown or ambiguous command \"$cmd\": must be" [join [lrange $cmdlist 0 end-1] {, }] "or" [lindex $cmdlist end]]
+	}
+    }
+    proc auto {ship id name code} {
+	global objects
+	dict set objects($ship) auto $id $code
+	return {}
+    }
+    proc source {ship fname} {
+	set fh [open $fname "r"]
+	set script [read $fh]
+	close $fh
+	interp eval $ship $script
+    }
+
+    proc do_autos {ship} {
+	global objects
+	set keys [dict get $objects($ship) auto]
+	dict for {key  code} $keys {
+	    interp eval $ship $code
 	}
     }
 }

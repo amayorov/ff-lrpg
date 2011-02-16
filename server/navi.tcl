@@ -19,7 +19,7 @@ namespace eval ::tcl::mathfunc {
 }
 
 namespace eval navi {
-    namespace export position velocity angle
+    namespace export position velocity angle aspeed
     
     proc position {shipname} {
 	global objects
@@ -40,6 +40,11 @@ namespace eval navi {
     proc angle {shipname} {
 	global objects
 	return [format "%.3f" [dict get $objects($shipname) angle]]
+    }
+
+    proc aspeed {shipname} {
+	global objects
+	return [format "%.3f" [dict get $objects($shipname) aspeed]]
     }
 
     proc rel_coords {shipname victim} {

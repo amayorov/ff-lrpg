@@ -10,7 +10,7 @@ namespace eval tcl::mathfunc {
 	return 3.1415926535897932
     }
     proc todeg {x} {
-	set y [expr {round{$x/pi()*180}}]
+	set y [expr {round($x/pi()*180)}]
 	return [expr {$y>0?$y:360+($y)}]
     }
 }

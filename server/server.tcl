@@ -27,10 +27,12 @@ user allow ::object::inventory::list ::inv {$ship}
 user allow ::navi::position {} {$ship}
 user allow ::navi::velocity {} {$ship}
 user allow ::navi::angle {} {$ship}
+user allow ::navi::aspeed {} {$ship}
 user allow ::navi::radar {} {$ship}
 
 user allow ::user::unknown ::unknown {$ship}
 
+user allow ::user::auto ::auto {$ship}
 
 namespace eval server {
     proc listen {sd host port} {
@@ -56,6 +58,7 @@ namespace eval server {
 	    set secret [lindex $dat 1]
 	    set connections($sd) $ship
 	    puts "Authenticated $ship"
+	    user init $ship
 	} elseif { [info exists connections($sd)] } {
 	    set ship $connections($sd)
 	    set result [user run $ship $dat]
@@ -113,7 +116,10 @@ while yes {
 	puts $log [concat [dict get $objects($obj) position] [dict get $objects($obj) speed]]
 	flush $log
 	draw_ship .c $obj
-	do_physic $obj 1
+	do_physic $obj [expr double($dt)/1000]
+	if {[is $objects($obj) ship]} {
+	    user do_autos $obj
+	}
     }
     
     foreach sh [.c gettags current] {
