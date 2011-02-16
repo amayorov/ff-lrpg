@@ -34,7 +34,7 @@ namespace eval user {
     proc run {ship cmd} {
 	variable allowed
 	global objects
-	interp create -safe $ship
+	#interp create -safe $ship
 	# выключить потом, нечего гадить в stdout
 	interp share {} stdout $ship
 # Может, вообще set выключить, заодно и шаманить с внутренним состоянием сервера не получится...
@@ -50,7 +50,7 @@ namespace eval user {
 	    interp eval $ship namespace inscope $n {namespace ensemble create}
 	}
 	catch {interp eval $ship $cmd} result
-	interp delete $ship
+	#interp delete $ship
 	return $result
     }
 

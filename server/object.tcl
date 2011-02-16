@@ -46,6 +46,9 @@ namespace eval object {
 	global objects
 	set d [dict create type $type position $position speed $speed angle $angle aspeed $aspeed inventory {}]
 	set objects($name) $d
+	if {$type eq "ship"} {
+	    interp create -safe $name
+	}
 	return $d
     }
 
