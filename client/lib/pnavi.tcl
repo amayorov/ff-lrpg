@@ -9,6 +9,10 @@ namespace eval tcl::mathfunc {
     proc pi {} {
 	return 3.1415926535897932
     }
+    proc todeg {x} {
+	set y [expr {round{$x/pi()*180}}]
+	return [expr {$y>0?$y:360+($y)}]
+    }
 }
 
 namespace eval gui {
@@ -124,7 +128,7 @@ namespace eval gui {
 		$widget insert {} 0 -id $name -text $name -tags $type
 	    } 
 	    $widget set $name distance $dist
-	    $widget set $name angle $angle
+	    $widget set $name angle [expr todeg($angle)]
 	}
 
 	proc draw_radar_grid {widget} {
