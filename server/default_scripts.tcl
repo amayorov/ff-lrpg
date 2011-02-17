@@ -1,11 +1,26 @@
 # Скрипты, которые выполняются присутствуют по умолчанию в безопасном интерпретаторе
 
-set target_angle [navi angle]
+set course [navi angle]
+
+proc ::tcl::mathfunc::pi {} {
+    return 3.1415926535897932
+}
+
+# Ограничивает угол к [-pi:pi]
+proc ::tcl::mathfunc::limit {x} {
+    set n [expr {floor($x/pi())}]
+    if {abs(fmod($n,2)) == 1.0} {
+	set n [expr {$n+1}]
+    }
+    return [expr {$x-$n*pi()}]
+
+}
 
 auto 0 steer_control {
-    global target_angle
+    global course
     set angle [navi angle]
-    set diff [expr $target_angle-$angle]
+    set diff [expr {limit($course-$angle)}]
+    puts $diff
     if {abs($diff) > 0.01} {
 	set power 0.01
     } else {
@@ -21,6 +36,6 @@ auto 0 steer_control {
 }
 
 proc dsteer {angle} {
-    global target_angle
-    set target_angle [expr fmod(([navi angle]+$angle/180*3.14559),360)]
+    global course
+    set course [expr fmod(([navi angle]+(1.)*$angle/180*3.14559),360)]
 }
