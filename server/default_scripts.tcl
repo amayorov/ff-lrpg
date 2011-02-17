@@ -20,7 +20,6 @@ auto 0 steer_control {
     global course
     set angle [navi angle]
     set diff [expr {limit($course-$angle)}]
-    puts $diff
     if {abs($diff) > 0.01} {
 	set power 0.01
     } else {
@@ -37,5 +36,5 @@ auto 0 steer_control {
 
 proc dsteer {angle} {
     global course
-    set course [expr fmod(([navi angle]+(1.)*$angle/180*3.14559),360)]
+    set course [expr fmod(([navi angle]+(-1.)*$angle/180*pi()),360)]
 }
