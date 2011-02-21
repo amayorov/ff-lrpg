@@ -24,6 +24,14 @@ namespace eval gui {
 	after 1000 set ::event::radar 1
     }
 
+    proc settab {tabname} {
+	set current [pack slaves .tabs]
+	if {! ($current eq {} )} {
+	    pack forget $current
+	}
+	pack $tabname -fill both
+    }
+
     grid columnconfigure . 0 -weight 1
     grid rowconfigure . 0 -weight 1
 
@@ -44,11 +52,16 @@ namespace eval gui {
     grid configure .cmdline.entry -sticky nsew
     grid columnconfigure .cmdline 1 -weight 1
     
-    ttk::notebook .tabs
+    ttk::frame .tabs
 
     ttk::frame .tabs.navi
+    ttk::frame .tabs.inv
+    ttk::frame .tabs.target
 
-    .tabs add .tabs.navi -text "Navigation" -sticky nswe
+    #pack .tabs.navi -fill both
+    gui::settab .tabs.navi
+
+    #.tabs add .tabs.navi -text "Navigation" -sticky nswe
 
     navi::init .tabs.navi
 
