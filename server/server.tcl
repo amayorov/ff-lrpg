@@ -15,14 +15,18 @@ namespace eval test {
 }
 
 user allow ::test::echo shipname {$ship}
+
 # Следующие строчки работают не по имени корабля, а по значению
-user allow ::ship::engines {} {$objects($ship)}
-user allow ::ship::tanks {} {$objects($ship)}
+# И, в общем-то, не нужны
+#user allow ::ship::engines {} {$objects($ship)}
+#user allow ::ship::tanks {} {$objects($ship)}
 
 
 user allow ::ship::throttle ::throttle {$ship}
 user allow ::ship::steer ::steer {$ship}
-user allow ::object::inventory::list ::inv {$ship}
+
+user allow ::object::inventory::list ::inventory::list {$ship}
+user allow ::object::inventory::user_get ::inventory::get {$ship}
 
 user allow ::navi::position {} {$ship}
 user allow ::navi::velocity {} {$ship}
@@ -30,8 +34,10 @@ user allow ::navi::angle {} {$ship}
 user allow ::navi::aspeed {} {$ship}
 user allow ::navi::radar {} {$ship}
 
+# Это штука для автодополнения команд
 user allow ::user::unknown ::unknown {$ship}
 
+# Это штука для программирования скриптов автопилота
 user allow ::user::auto ::auto {$ship}
 
 namespace eval server {

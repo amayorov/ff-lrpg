@@ -106,12 +106,25 @@ namespace eval object {
 	    global objects
 	    global items
 	    if [exists $objname $invname] {
-		set id [dict get $objects($objname) inventory $invname]
+		::set id [dict get $objects($objname) inventory $invname]
 		return $items($id)
 	    } else {
 		return
 	    }
 	}
+# Подумать, куда бы перенести эту процедуру
+	proc user_get {objname invname} {
+	    ::set inv [get $objname $invname]
+	    ::set allowed {type throttle angle position left mass outline}
+	    ::set result [dict create]
+	    dict for {key val} $inv {
+		if {[lsearch -exact $allowed $key] != -1} {
+		    dict set result $key $val
+		}
+	    }
+	    return $result
+	}
+# А вот тут грабли... Надо бы переиментовать от греха подальше
 	proc set {objname invname args} {
 	    global objects
 	    if {[exists $objname $invname]} {

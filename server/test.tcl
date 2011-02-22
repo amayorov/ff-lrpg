@@ -1,10 +1,12 @@
 object create ship "Destiny" {0 0} {0 0}
 
+set h [item create hull mass 1 outline {30 0 0 10 5 0 0 -10} position {0 0}]
 set t [item create tank left 1000.]
 set e [item create engine tank $t throttle 0 angle 0 position {0 0}]
 set e1 [item create engine tank $t throttle 0 angle 0 position {0 10}]
 set e2 [item create engine tank $t throttle 0 angle 0 position {0 -10}]
 
+object inv load Destiny $h {hull}
 object inv load Destiny $e {main}
 object inv load Destiny $e1 {left}
 object inv load Destiny $e2 {right}
@@ -30,3 +32,6 @@ object create asteroid "A00001" {100 10}
 object create asteroid "A00002" {50 70}
 object create asteroid "A00003" {-10 50}
 object create asteroid "A00004" {-30 -30}
+
+
+puts [object inv get Destiny main]

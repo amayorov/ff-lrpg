@@ -9,4 +9,6 @@
 # full path name of this file's directory.
 
 package ifneeded ff-client-network 0.0 [list source [file join $dir network.tcl]]
+package ifneeded ff-math 0.0 [list source [file join $dir math.tcl]]
+package ifneeded ff-p-inv 0.0 [list source [file join $dir pinv.tcl]]
 package ifneeded ff-p-navi 0.0 [list source [file join $dir pnavi.tcl]]

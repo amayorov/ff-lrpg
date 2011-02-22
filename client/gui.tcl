@@ -4,6 +4,7 @@ package require Tcl 8.5
 package require Tk 8.5
 
 package require ff-p-navi
+package require ff-p-inv
 source style.tcl
 
 namespace eval event {}
@@ -59,11 +60,13 @@ namespace eval gui {
     ttk::frame .tabs.target
 
     #pack .tabs.navi -fill both
-    gui::settab .tabs.navi
 
     #.tabs add .tabs.navi -text "Navigation" -sticky nswe
 
     navi::init .tabs.navi
+    inv::init .tabs.inv
+
+    gui::settab .tabs.inv
 
     grid .tabs -sticky nsew
     grid .cmdlog -sticky nesw
